@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Endpoints API - MTACMN</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; margin: 20px 0; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .status { padding: 10px 15px; border-radius: 6px; margin: 10px 0; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 6px; text-decoration: none; display: inline-block; margin: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .btn.success { background: #28a745; }
+        .btn.success:hover { background: #218838; }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        h2 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
+        .endpoint { background: #f8f9fa; padding: 10px; border-radius: 6px; margin: 10px 0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test des Endpoints API MTACMN</h1>
+        
+        <div class="card">
+            <h2>🌐 Test des endpoints GET</h2>
+            <div id="get-results"></div>
+        </div>
+
+        <div class="card">
+            <h2>📝 Test des endpoints POST</h2>
+            <div id="post-results"></div>
+        </div>
+
+        <div class="card">
+            <h2>🔍 Diagnostic du routage</h2>
+            <div id="routing-info"></div>
+        </div>
+
+        <div class="card">
+            <h2>🛠️ Actions manuelles</h2>
+            <button onclick="testAllEndpoints()" class="btn">Tester tous les endpoints</button>
+            <button onclick="testCreateArticle()" class="btn">Créer article test</button>
+            <button onclick="showAPIStructure()" class="btn">Voir structure API</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = './api.php';
+        
+        // Endpoints à tester
+        const endpoints = {
+            get: [
+                { path: '', desc: 'Racine' },
+                { path: 'articles', desc: 'Liste articles' },
+                { path: 'articles/stats', desc: 'Statistiques articles' },
+                { path: 'settings', desc: 'Paramètres' },
+                { path: 'test', desc: 'Test connexion' },
+                { path: '123', desc: 'Article ID 123' }
+            ],
+            post: [
+                { path: 'articles', desc: 'Créer article' },
+                { path: 'auth', desc: 'Authentification' }
+            ]
+        };
+
+        // Fonction pour tester un endpoint
+        async function testEndpoint(method, path, data = null) {
+            try {
+                const url = path ? `${API_BASE}/${path}` : API_BASE;
+                const options = {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                
+                if (data && method === 'POST') {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(url, options);
+                const result = await response.json();
+                
+                return {
+                    status: response.status,
+                    success: response.ok,
+                    data: result,
+                    error: null
+                };
+            } catch (error) {
+                return {
+                    status: 0,
+                    success: false,
+                    data: null,
+                    error: error.message
+                };
+            }
+        }
+
+        // Tester tous les endpoints GET
+        async function testAllEndpoints() {
+            const getResults = document.getElementById('get-results');
+            const postResults = document.getElementById('post-results');
+            
+            getResults.innerHTML = '<h3>📡 Tests GET en cours...</h3>';
+            postResults.innerHTML = '<h3>📤 Tests POST en cours...</h3>';
+            
+            // Tests GET
+            let getHtml = '<h3>📡 Résultats GET:</h3>';
+            for (const endpoint of endpoints.get) {
+                const result = await testEndpoint('GET', endpoint.path);
+                const statusClass = result.success ? 'success' : 'error';
+                
+                getHtml += `
+                    <div class="endpoint">
+                        <strong>GET /${endpoint.path}</strong> - ${endpoint.desc}<br>
+                        <div class="status ${statusClass}">
+                            Status: ${result.status} | ${result.success ? '✅ Succès' : '❌ Erreur'}
+                        </div>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            getResults.innerHTML = getHtml;
+            
+            // Tests POST
+            let postHtml = '<h3>📤 Résultats POST:</h3>';
+            for (const endpoint of endpoints.post) {
+                const testData = endpoint.path === 'articles' ? {
+                    titre: 'Article de test',
+                    date: '25/03/2026',
+                    categorie: 'Transports',
+                    resume: 'Test de résumé',
+                    contenu: 'Test de contenu',
+                    statut: 'Brouillon'
+                } : {
+                    username: 'test',
+                    password: 'test'
+                };
+                
+                const result = await testEndpoint('POST', endpoint.path, testData);
+                const statusClass = result.success ? 'success' : 'error';
+                
+                postHtml += `
+                    <div class="endpoint">
+                        <strong>POST /${endpoint.path}</strong> - ${endpoint.desc}<br>
+                        <div class="status ${statusClass}">
+                            Status: ${result.status} | ${result.success ? '✅ Succès' : '❌ Erreur'}
+                        </div>
+                        <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            postResults.innerHTML = postHtml;
+        }
+
+        // Tester la création d'article
+        async function testCreateArticle() {
+            const testArticle = {
+                titre: 'Article test ' + Date.now(),
+                date: '25/03/2026',
+                categorie: 'Transports',
+                resume: 'Test de résumé pour article',
+                contenu: 'Test de contenu pour article',
+                statut: 'Brouillon'
+            };
+            
+            const result = await testEndpoint('POST', 'articles', testArticle);
+            
+            alert(`Résultat création article: ${result.success ? '✅ Succès' : '❌ Erreur'}\n\n${JSON.stringify(result.data, null, 2)}`);
+        }
+
+        // Afficher la structure de l'API
+        function showAPIStructure() {
+            const structure = `
+📋 STRUCTURE DE L'API MTACMN
+
+📡 ENDPOINTS GET:
+• GET /api.php/                    → Racine (test)
+• GET /api.php/articles             → Liste des articles
+• GET /api.php/articles/stats       → Statistiques articles  
+• GET /api.php/settings            → Paramètres
+• GET /api.php/{id}               → Article spécifique
+
+📤 ENDPOINTS POST:
+• POST /api.php/articles            → Créer un article
+• POST /api.php/auth              → Authentification
+
+🔧 ENDPOINTS PUT:
+• PUT /api.php/settings            → Mettre à jour un paramètre
+
+📋 PARAMÈRES GET:
+• ?statut=Publié                → Filtrer par statut
+• ?categorie=Transports           → Filtrer par catégorie
+• ?limit=10                      → Limiter résultats
+• ?offset=20                     → Pagination
+
+📋 FORMAT JSON POUR CRÉER ARTICLE:
+{
+    "titre": "Titre de l'article",
+    "date": "25/03/2026", 
+    "categorie": "Transports",
+    "resume": "Résumé de l'article",
+    "contenu": "Contenu complet de l'article",
+    "statut": "Brouillon"
+}
+            `;
+            
+            alert(structure);
+        }
+
+        // Diagnostic du routage
+        async function diagnoseRouting() {
+            const routingInfo = document.getElementById('routing-info');
+            
+            // Tester différentes URLs
+            const tests = [
+                './api.php',
+                './api.php/',
+                './api.php/articles',
+                './api.php/articles?statut=Publié',
+                './api.php/nonexistent'
+            ];
+            
+            let html = '<h3>🔍 Tests de routage:</h3>';
+            
+            for (const url of tests) {
+                try {
+                    const response = await fetch(url);
+                    const text = await response.text();
+                    
+                    html += `
+                        <div class="endpoint">
+                            <strong>${url}</strong><br>
+                            <div class="status ${response.ok ? 'success' : 'error'}">
+                                Status: ${response.status} | ${response.ok ? '✅' : '❌'}
+                            </div>
+                            <pre>${text.substring(0, 200)}${text.length > 200 ? '...' : ''}</pre>
+                        </div>
+                    `;
+                } catch (error) {
+                    html += `
+                        <div class="endpoint">
+                            <strong>${url}</strong><br>
+                            <div class="status error">❌ Erreur réseau: ${error.message}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            routingInfo.innerHTML = html;
+        }
+
+        // Initialisation
+        window.onload = () => {
+            diagnoseRouting();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTACMN - Ministère des Transports, Aviation Civile & Météorologie</title>
+    
+    <!-- Configuration Supabase -->
+    <script src="config-supabase.js"></script>
+    
+    <!-- SDK Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Base de données Supabase -->
+    <script src="database-supabase.js"></script>
+    
+    <!-- Styles -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        .mtacmn-primary { background-color: #1e40af; }
+        .mtacmn-secondary { background-color: #dc2626; }
+        .mtacmn-accent { background-color: #059669; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="mtacmn-primary text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="https://via.placeholder.com/60x60/1e40af/ffffff?text=MTACMN" alt="Logo MTACMN" class="h-12 rounded">
+                    <div>
+                        <h1 class="text-xl font-bold">MTACMN</h1>
+                        <p class="text-sm opacity-90">Ministère des Transports, Aviation Civile & Météorologie Nationale</p>
+                    </div>
+                </div>
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#accueil" class="hover:text-blue-200 transition">Accueil</a>
+                    <a href="#actualites" class="hover:text-blue-200 transition">Actualités</a>
+                    <a href="#transports" class="hover:text-blue-200 transition">Transports</a>
+                    <a href="#aviation" class="hover:text-blue-200 transition">Aviation Civile</a>
+                    <a href="#meteorologie" class="hover:text-blue-200 transition">Météorologie</a>
+                    <a href="#contact" class="hover:text-blue-200 transition">Contact</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+        <div class="container mx-auto px-4">
+            <div class="max-w-3xl">
+                <h2 class="text-4xl font-bold mb-4">Bienvenue au MTACMN</h2>
+                <p class="text-xl mb-6 opacity-90">
+                    Assurer la sécurité, la régulation et le développement des infrastructures 
+                    et services de transport, d'aviation civile et de météorologie pour le bien-être des citoyens tchadiens.
+                </p>
+                <div class="flex space-x-4">
+                    <button class="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition">
+                        <i class="fas fa-newspaper mr-2"></i>Dernières actualités
+                    </button>
+                    <button class="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition">
+                        <i class="fas fa-info-circle mr-2"></i>En savoir plus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Articles Section -->
+    <section id="actualites" class="py-16">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12">Actualités Récentes</h2>
+            
+            <div id="articles-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Les articles seront chargés ici via JavaScript -->
+            </div>
+            
+            <div id="loading-articles" class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-3xl text-blue-600"></i>
+                <p class="mt-2">Chargement des articles...</p>
+            </div>
+            
+            <div id="error-articles" class="text-center py-8 hidden">
+                <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+                <p class="mt-2">Erreur lors du chargement des articles</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="py-16 bg-gray-100">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12">Nos Secteurs d'Activité</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
+                    <div class="text-blue-600 text-4xl mb-4">
+                        <i class="fas fa-road"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Transports</h3>
+                    <p class="text-gray-600">Développement des infrastructures routières, ferroviaires et portuaires pour désenclaver le territoire.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
+                    <div class="text-blue-600 text-4xl mb-4">
+                        <i class="fas fa-plane"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Aviation Civile</h3>
+                    <p class="text-gray-600">Sécurité aérienne, gestion des aéroports et conformité aux normes internationales de l'OACI.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
+                    <div class="text-blue-600 text-4xl mb-4">
+                        <i class="fas fa-cloud-sun"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Météorologie</h3>
+                    <p class="text-gray-600">Prévisions météorologiques, surveillance climatique et alertes pour la sécurité des populations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-lg font-bold mb-4">MTACMN</h4>
+                    <p class="text-gray-400">Ministère des Transports, de l'Aviation Civile et de la Météorologie Nationale</p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Contact</h4>
+                    <p class="text-gray-400">
+                        <i class="fas fa-map-marker-alt mr-2"></i>Avenue de la Nation, N'Djaména<br>
+                        <i class="fas fa-phone mr-2"></i>+235 22 51 03 45<br>
+                        <i class="fas fa-envelope mr-2"></i>contact@mtacmn.td
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Liens Utiles</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition">Actualités</a></li>
+                        <li><a href="#" class="hover:text-white transition">Services</a></li>
+                        <li><a href="#" class="hover:text-white transition">Publications</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Suivez-nous</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <i class="fab fa-facebook text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <i class="fab fa-linkedin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition">
+                            <i class="fab fa-youtube text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2026 MTACMN. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Charger et afficher les articles depuis Supabase
+        async function loadArticles() {
+            const container = document.getElementById('articles-container');
+            const loading = document.getElementById('loading-articles');
+            const error = document.getElementById('error-articles');
+            
+            try {
+                // Attendre l'initialisation de la base de données
+                await window.MTACMNDatabase.init();
+                
+                // Récupérer les articles publiés
+                const result = await window.MTACMNDatabase.getArticles({ statut: 'Publié' });
+                
+                if (result.success && result.articles.length > 0) {
+                    container.innerHTML = '';
+                    loading.classList.add('hidden');
+                    
+                    result.articles.forEach(article => {
+                        const articleCard = createArticleCard(article);
+                        container.appendChild(articleCard);
+                    });
+                    
+                    console.log(`✅ ${result.articles.length} articles chargés`);
+                } else {
+                    loading.classList.add('hidden');
+                    error.classList.remove('hidden');
+                    console.warn('⚠️ Aucun article trouvé');
+                }
+                
+            } catch (err) {
+                console.error('❌ Erreur lors du chargement des articles:', err);
+                loading.classList.add('hidden');
+                error.classList.remove('hidden');
+            }
+        }
+
+        // Créer une carte d'article
+        function createArticleCard(article) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition';
+            
+            const imageSrc = article.image || 'https://via.placeholder.com/400x250/e5e7eb/374151?text=Article';
+            const categoryIcon = getCategoryIcon(article.categorie);
+            
+            card.innerHTML = `
+                <div class="relative">
+                    <img src="${imageSrc}" alt="${article.titre}" class="w-full h-48 object-cover">
+                    ${article.une ? '<span class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold">À la une</span>' : ''}
+                    <div class="absolute bottom-0 left-0 bg-blue-600 text-white px-3 py-1">
+                        <i class="${categoryIcon} mr-1"></i>${article.categorie}
+                    </div>
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-2 line-clamp-2">${article.titre}</h3>
+                    <p class="text-gray-600 mb-4 line-clamp-3">${article.resume}</p>
+                    <div class="flex justify-between items-center text-sm text-gray-500">
+                        <span><i class="far fa-calendar mr-1"></i>${article.date}</span>
+                        <span><i class="far fa-eye mr-1"></i>${article.vues || 0} vues</span>
+                    </div>
+                    <button onclick="viewArticle(${article.id})" class="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
+                        Lire la suite
+                    </button>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Obtenir l'icône de catégorie
+        function getCategoryIcon(categorie) {
+            const icons = {
+                'Transports': 'fas fa-road',
+                'Aviation Civile': 'fas fa-plane',
+                'Météorologie': 'fas fa-cloud-sun'
+            };
+            return icons[categorie] || 'fas fa-newspaper';
+        }
+
+        // Voir un article (incrémenter les vues)
+        async function viewArticle(id) {
+            try {
+                // Incrémenter les vues
+                await window.MTACMNDatabase.incrementViews(id);
+                console.log(`📊 Vue incrémentée pour l'article ${id}`);
+                
+                // Ici vous pourriez rediriger vers une page de détail
+                alert(`Article ${id} - redirection vers la page de détail à implémenter`);
+                
+            } catch (error) {
+                console.error('❌ Erreur lors de la visualisation de l\'article:', error);
+            }
+        }
+
+        // Initialiser au chargement de la page
+        document.addEventListener('DOMContentLoaded', loadArticles);
+    </script>
+</body>
+</html>

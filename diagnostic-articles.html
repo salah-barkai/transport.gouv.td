@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic Articles - MTACMN</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; margin: 20px 0; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .status { padding: 10px 15px; border-radius: 6px; margin: 10px 0; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 6px; text-decoration: none; display: inline-block; margin: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        h2 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
+        .article { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Diagnostic des Articles</h1>
+        
+        <div class="card">
+            <h2>🗄️ Articles dans la base de données</h2>
+            <div id="db-articles" class="status info">Chargement en cours...</div>
+            <div id="db-list"></div>
+        </div>
+
+        <div class="card">
+            <h2>💾 Articles dans localStorage</h2>
+            <div id="ls-articles" class="status info">Vérification en cours...</div>
+            <div id="ls-list"></div>
+        </div>
+
+        <div class="card">
+            <h2>🔄 État de MTACMNDatabase</h2>
+            <div id="db-status" class="status info">Vérification en cours...</div>
+        </div>
+
+        <div class="card">
+            <h2>🌐 Test API direct</h2>
+            <button onclick="testAPI()" class="btn">Tester l'API</button>
+            <div id="api-result"></div>
+        </div>
+
+        <div class="card">
+            <h2>🔧 Actions</h2>
+            <button onclick="clearCache()" class="btn">Vider le cache</button>
+            <button onclick="forceReload()" class="btn">Forcer rechargement</button>
+            <button onclick="goToSite()" class="btn">Aller au site</button>
+        </div>
+    </div>
+
+    <script src="api-client.js"></script>
+    <script>
+        let diagnosticResults = {};
+
+        // Fonction pour afficher les articles
+        function displayArticles(articles, containerId, title) {
+            const container = document.getElementById(containerId);
+            
+            if (!articles || articles.length === 0) {
+                container.innerHTML = `<div class="status warning">⚠️ ${title}: Aucun article trouvé</div>`;
+                return;
+            }
+            
+            let html = `<div class="status success">✅ ${title}: ${articles.length} article(s) trouvé(s)</div>`;
+            
+            articles.forEach(article => {
+                const statutColor = article.statut === 'Publié' ? 'green' : 'orange';
+                const statutIcon = article.statut === 'Publié' ? '✅' : '📝';
+                
+                html += `
+                    <div class="article">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <strong>${article.titre || 'Sans titre'}</strong>
+                            <span style="color: ${statutColor};">${statutIcon} ${article.statut}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #666; margin-bottom: 8px;">
+                            📁 Catégorie: ${article.categorie || 'Non définie'} | 
+                            📅 Date: ${article.date || 'Non définie'} |
+                            🆔 ID: ${article.id || 'N/A'}
+                        </div>
+                        <div style="font-size: 13px; color: #333; line-height: 1.4;">
+                            ${(article.resume || '').substring(0, 150)}${(article.resume || '').length > 150 ? '...' : ''}
+                        </div>
+                        ${article.image ? `<div style="font-size: 11px; color: #007bff; margin-top: 8px;">🖼️ Image: ${article.image.substring(0, 100)}${article.image.length > 100 ? '...' : ''}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 1. Vérifier les articles dans la base de données
+        async function checkDatabaseArticles() {
+            const statusDiv = document.getElementById('db-articles');
+            
+            try {
+                if (typeof window.MTACMNDatabase !== 'undefined') {
+                    statusDiv.innerHTML = '<div class="status info">🔄 Connexion à la base de données...</div>';
+                    
+                    // Attendre l'initialisation
+                    let attempts = 0;
+                    while (attempts < 10) {
+                        if (window.MTACMNDatabase && window.MTACMNDatabase.initialized) {
+                            const articles = await window.MTACMNDatabase.getArticles();
+                            diagnosticResults.dbArticles = articles;
+                            displayArticles(articles, 'db-list', 'Base de données');
+                            statusDiv.innerHTML = '<div class="status success">✅ Base de données connectée</div>';
+                            return;
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        attempts++;
+                    }
+                    
+                    statusDiv.innerHTML = '<div class="status error">❌ Timeout: Base de données non initialisée</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="status error">❌ MTACMNDatabase non trouvé</div>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // 2. Vérifier localStorage
+        function checkLocalStorage() {
+            const statusDiv = document.getElementById('ls-articles');
+            
+            try {
+                const saved = localStorage.getItem('mtacmn_articles');
+                if (saved) {
+                    const articles = JSON.parse(saved);
+                    diagnosticResults.lsArticles = articles;
+                    displayArticles(articles, 'ls-list', 'LocalStorage');
+                    statusDiv.innerHTML = '<div class="status success">✅ Articles trouvés dans localStorage</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="status warning">⚠️ Aucun article dans localStorage</div>';
+                    document.getElementById('ls-list').innerHTML = '';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="status error">❌ Erreur localStorage: ${error.message}</div>`;
+            }
+        }
+
+        // 3. Vérifier l'état de MTACMNDatabase
+        function checkDBStatus() {
+            const statusDiv = document.getElementById('db-status');
+            
+            if (typeof window.MTACMNDatabase !== 'undefined') {
+                const status = window.MTACMNDatabase.initialized ? 'Initialisé' : 'Non initialisé';
+                const statusClass = window.MTACMNDatabase.initialized ? 'success' : 'warning';
+                
+                statusDiv.innerHTML = `
+                    <div class="status ${statusClass}">
+                        📊 MTACMNDatabase: ${status}
+                    </div>
+                    <div style="margin-top: 10px; font-size: 12px;">
+                        Méthodes disponibles: ${Object.getOwnPropertyNames(Object.getPrototypeOf(window.MTACMNDatabase)).join(', ')}
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = '<div class="status error">❌ MTACMNDatabase non défini</div>';
+            }
+        }
+
+        // 4. Test API direct
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="status info">🔄 Test API en cours...</div>';
+            
+            try {
+                const response = await fetch('./api.php/articles');
+                const data = await response.json();
+                
+                if (response.ok && data.articles) {
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ API fonctionnelle</div>
+                        <div style="margin-top: 10px;">
+                            <strong>${data.articles.length} articles trouvés via API</strong>
+                        </div>
+                    `;
+                    displayArticles(data.articles, 'api-result', 'API Directe');
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">❌ Erreur API: ${JSON.stringify(data)}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">❌ Erreur API: ${error.message}</div>`;
+            }
+        }
+
+        // 5. Vider le cache
+        function clearCache() {
+            localStorage.removeItem('mtacmn_articles');
+            alert('Cache vidé ! Rafraîchissez la page start.html');
+        }
+
+        // 6. Forcer rechargement
+        function forceReload() {
+            if (window.MTACMNDatabase) {
+                window.MTACMNDatabase.initialized = false;
+                window.MTACMNDatabase.init();
+                alert('Rechargement forcé !');
+            } else {
+                alert('MTACMNDatabase non disponible');
+            }
+        }
+
+        // 7. Aller au site
+        function goToSite() {
+            window.open('start.html', '_blank');
+        }
+
+        // Initialisation
+        window.onload = () => {
+            checkDBStatus();
+            checkLocalStorage();
+            checkDatabaseArticles();
+        };
+    </script>
+</body>
+</html>

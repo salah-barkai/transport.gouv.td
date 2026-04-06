@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Direct Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Direct Supabase</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Configuration directe sans fichier externe
+        const SUPABASE_URL = 'https://modpcwtnnnnxjhfhqfzw.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_XInFbMcsLX7Iac8qNsofCA_6gETzyTB';
+        
+        console.log('URL:', SUPABASE_URL);
+        console.log('Key:', SUPABASE_ANON_KEY);
+        
+        // Test direct
+        try {
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            supabase.from('settings').select('count').then(result => {
+                console.log('Résultat direct:', result);
+                document.getElementById('result').innerHTML = 
+                    result.error ? '❌ Erreur: ' + result.error.message : '✅ Succès: ' + JSON.stringify(result.data);
+            });
+            
+        } catch (error) {
+            console.error('Erreur de création:', error);
+            document.getElementById('result').innerHTML = '❌ Erreur de création: ' + error.message;
+        }
+    </script>
+</body>
+</html>

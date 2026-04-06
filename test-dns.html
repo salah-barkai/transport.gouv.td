@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test DNS</title>
+</head>
+<body>
+    <h1>Test DNS Supabase</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Test si le domaine est résolvable
+        fetch('https://modpcwtnnnnxjhfhqfzw.supabase.co/rest/v1/')
+            .then(response => {
+                document.getElementById('result').innerHTML = '✅ Domaine accessible (statut: ' + response.status + ')';
+            })
+            .catch(error => {
+                document.getElementById('result').innerHTML = '❌ Erreur DNS: ' + error.message;
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration MTACMN</title>
+    
+    <!-- Base de données MySQL MTACMN -->
+    <script src="database.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+        
+        /* Login */
+        .login-page { min-height: 100vh; background: linear-gradient(135deg, #0a1628 0%, #1a3a6e 50%, #0a1628 100%); display: flex; align-items: center; justify-content: center; padding: 24px; }
+        .login-card { width: 100%; max-width: 420px; background: rgba(255,255,255,0.06); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 36px; }
+        .login-logo { width: 72px; height: 72px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 0 auto 16px; }
+        .login-title { color: #fff; font-size: 20px; font-weight: 900; text-align: center; margin-bottom: 6px; }
+        .login-subtitle { color: rgba(255,255,255,0.5); font-size: 14px; text-align: center; margin-bottom: 28px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 600; display: block; margin-bottom: 8px; }
+        .form-input { width: 100%; background: rgba(255,255,255,0.08); border: 1.5px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 16px; font-size: 15px; color: #fff; outline: none; }
+        .form-input:focus { border-color: #f59e0b; }
+        .btn { width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706); color: #0a1628; border: none; padding: 14px; border-radius: 10px; font-weight: 900; cursor: pointer; font-size: 15px; }
+        .btn:hover { opacity: 0.9; }
+        
+        /* Dashboard */
+        .dashboard { display: flex; min-height: 100vh; }
+        .sidebar { width: 240px; background: #0a1628; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+        .sidebar-brand { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 12px; }
+        .sidebar-logo { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .sidebar-title { color: #fff; font-weight: 900; font-size: 13px; }
+        .sidebar-subtitle { color: rgba(255,255,255,0.4); font-size: 11px; }
+        .sidebar-nav { flex: 1; padding: 12px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 14px; border: none; cursor: pointer; border-radius: 10px; margin-bottom: 2px; background: transparent; color: rgba(255,255,255,0.55); font-weight: 500; font-size: 14px; transition: all 0.15s; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; }
+        .nav-item.active { border-left: 3px solid #f59e0b; font-weight: 800; }
+        .sidebar-footer { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .user-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.06); border-radius: 10px; margin-bottom: 10px; }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .user-name { color: #fff; font-size: 12px; font-weight: 700; }
+        .user-email { color: rgba(255,255,255,0.4); font-size: 10px; }
+        .btn-logout { width: 100%; background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); padding: 9px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 13px; }
+        
+        /* Main Content */
+        .main { flex: 1; padding: 32px 36px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+        .header-info { font-size: 12px; color: #9ca3af; }
+        .sync-chip { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+        .sync-db { background: #dcfce7; color: #166534; }
+        .sync-local { background: #fef3c7; color: #92400e; }
+        .sync-time { color: #6b7280; font-size: 11px; margin-left: 8px; }
+        .btn-primary { background: linear-gradient(135deg, #1a3a6e, #2563eb); color: #fff; border: none; padding: 11px 22px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 14px; }
+        .btn-success { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0a1628; }
+        
+        /* Cards */
+        .card { background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .card-title { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+        .card-subtitle { color: #6b7280; font-size: 13px; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 32px; }
+        .stat-card { background: #fff; border-radius: 14px; padding: 24px 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: relative; }
+        .stat-icon { font-size: 28px; margin-bottom: 10px; }
+        .stat-value { font-size: 32px; font-weight: 900; color: #1a3a6e; margin-bottom: 4px; }
+        .stat-label { font-size: 13px; font-weight: 700; color: #374151; }
+        .stat-sub { font-size: 12px; color: #9ca3af; }
+        
+        /* Table */
+        .table-container { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .table-header { display: grid; grid-template-columns: 1fr 120px 100px 80px 130px; padding: 12px 20px; background: #f8f9fb; border-bottom: 1px solid #e5e7eb; font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; }
+        .table-row { display: grid; grid-template-columns: 1fr 120px 100px 80px 130px; padding: 14px 20px; border-bottom: 1px solid #f3f4f6; align-items: center; }
+        .table-row:hover { background: #f9fafb; }
+        
+        /* Forms */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .form-group label { font-size: 12px; font-weight: 800; display: block; margin-bottom: 8px; color: #374151; }
+        .form-input-text, .form-input-select, .form-input-textarea { width: 100%; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 12px 16px; font-size: 14px; outline: none; box-sizing: border-box; }
+        .form-input-text:focus, .form-input-select:focus, .form-input-textarea:focus { border-color: #1a3a6e; }
+        .form-input-textarea { resize: vertical; min-height: 100px; }
+        
+        /* Buttons */
+        .btn-small { padding: 6px 10px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 700; }
+        .btn-edit { background: #dbeafe; color: #1e40af; }
+        .btn-delete { background: #fee2e2; color: #dc2626; }
+        .btn-star { background: #fef9c3; }
+        
+        /* Tags */
+        .tag { padding: 3px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .tag-published { background: #dcfce7; color: #15803d; }
+        .tag-draft { background: #fef9c3; color: #d97706; }
+        
+        /* Toast */
+        .toast { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 14px 22px; border-radius: 12px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); max-width: 380px; animation: fadeIn 0.2s ease; }
+        .toast-success { background: #f0fdf4; border: 1.5px solid #86efac; color: #15803d; }
+        .toast-error { background: #fef2f2; border: 1.5px solid #fca5a5; color: #dc2626; }
+        
+        /* Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        /* Filters */
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .filter-input { flex: 1; min-width: 200px; border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 9px 14px; font-size: 13px; outline: none; }
+        .filter-btn { padding: 7px 14px; border-radius: 99px; border: none; cursor: pointer; font-weight: 700; font-size: 12px; background: #f3f4f6; color: #374151; }
+        .filter-btn.active { background: #1a3a6e; color: #fff; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-page" class="login-page">
+        <div class="login-card">
+            <div class="login-logo">🏛️</div>
+            <div class="login-title">Administration MTACMN</div>
+            <div class="login-subtitle">Ministère des Transports, Aviation Civile & Météorologie</div>
+            
+            <div class="form-group">
+                <label class="form-label">Mot de passe administrateur</label>
+                <input type="password" id="login-password" class="form-input" placeholder="•••••••" onkeypress="if(event.key==='Enter')doLogin()">
+            </div>
+            <div style="color: rgba(255,255,255,0.35); font-size: 11px; margin-bottom: 24px; text-align: right;">Demo: admin2026</div>
+            
+            <button class="btn" onclick="doLogin()">Se connecter →</button>
+            
+            <div id="login-error" style="color: #f87171; font-size: 12px; margin-top: 16px; text-align: center; display: none;">Mot de passe incorrect</div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-logo">🏛️</div>
+                <div>
+                    <div class="sidebar-title">Admin MTACMN</div>
+                    <div class="sidebar-subtitle">Tableau de bord</div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" onclick="showSection('apercu')" data-section="apercu">
+                    <span>📊</span> Aperçu
+                </button>
+                <button class="nav-item" onclick="showSection('articles')" data-section="articles">
+                    <span>📰</span> Articles
+                </button>
+                <button class="nav-item" onclick="showSection('editeur')" data-section="editeur">
+                    <span>✏️</span> Nouvel article
+                </button>
+                <button class="nav-item" onclick="showSection('parametres')" data-section="parametres">
+                    <span>⚙️</span> Paramètres
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div>
+                        <div class="user-name">Administrateur</div>
+                        <div class="user-email">admin@transports.gouv.td</div>
+                    </div>
+                </div>
+                <button class="btn-logout" onclick="doLogout()">🚪 Déconnexion</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="header">
+                <div class="header-info">Ministère des Transports · N'Djaména, Tchad · <span id="current-date"></span></div>
+                <button class="btn-primary btn-success" onclick="showSection('editeur')">+ Nouvel article</button>
+            </div>
+
+            <!-- Section: Aperçu -->
+            <div id="section-apercu" class="section active">
+                <div class="card">
+                    <div class="card-title">Tableau de bord</div>
+                    <div class="card-subtitle">Vue d'ensemble de l'activité du site</div>
+                </div>
+                
+                <div class="stats-grid" id="stats-container">
+                    <!-- Stats will be loaded here -->
+                </div>
+                
+                <div class="card">
+                    <div class="card-title" style="font-size: 18px;">Articles récents</div>
+                    <div id="recent-articles"></div>
+                </div>
+            </div>
+
+            <!-- Section: Articles -->
+            <div id="section-articles" class="section">
+                <div class="card">
+                    <div class="card-title">Gestion des articles</div>
+                    <div class="card-subtitle"><span id="total-articles">0</span> article(s) au total</div>
+                </div>
+                
+                <div class="filter-bar">
+                    <input type="text" id="search-articles" class="filter-input" placeholder="🔍 Rechercher un article..." onkeyup="filterArticles()">
+                    <div id="filter-buttons">
+                        <button class="filter-btn active" onclick="setFilter('Tous')">Tous</button>
+                        <button class="filter-btn" onclick="setFilter('Publiés')">Publiés</button>
+                        <button class="filter-btn" onclick="setFilter('Brouillons')">Brouillons</button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <div class="table-header">
+                        <span>Article</span><span>Catégorie</span><span>Statut</span><span>Vues</span><span>Actions</span>
+                    </div>
+                    <div id="articles-table"></div>
+                </div>
+            </div>
+
+            <!-- Section: Éditeur -->
+            <div id="section-editeur" class="section">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <button onclick="showSection('articles')" style="background: none; border: none; color: #1a3a6e; cursor: pointer; font-weight: 700; font-size: 13px; margin-bottom: 6px;">← Retour aux articles</button>
+                            <div class="card-title" id="editor-title">Nouvel article</div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-primary" style="background: #f3f4f6; color: #374151;" onclick="saveArticle(false)">💾 Brouillon</button>
+                            <button class="btn-primary btn-success" onclick="saveArticle(true)">🚀 Publier</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Titre *</label>
+                            <input type="text" id="article-titre" class="form-input-text" placeholder="Titre de l'article">
+                        </div>
+                        <div class="form-group">
+                            <label>Catégorie</label>
+                            <select id="article-categorie" class="form-input-select">
+                                <option>Transports</option>
+                                <option>Aviation Civile</option>
+                                <option>Météorologie</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Résumé *</label>
+                        <textarea id="article-resume" class="form-input-textarea" rows="3" placeholder="Résumé court de l'article..."></textarea>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Contenu</label>
+                        <textarea id="article-contenu" class="form-input-textarea" rows="8" placeholder="Contenu complet de l'article..."></textarea>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="text" id="article-date" class="form-input-text" placeholder="Date de publication">
+                        </div>
+                        <div class="form-group">
+                            <label>Image</label>
+                            <input type="file" id="article-image-file" class="form-input-text" accept="image/*" onchange="previewImage(event)">
+                            <input type="hidden" id="article-image" placeholder="URL de l'image">
+                            <div id="image-preview" style="margin-top: 10px; display: none;">
+                                <img id="preview-img" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <button type="button" onclick="removeImage()" style="margin-top: 5px; padding: 4px 8px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Supprimer</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="article-une" style="width: 16px; height: 16px;">
+                            <span style="font-size: 13px; font-weight: 700;">⭐ Article à la une</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Paramètres -->
+            <div id="section-parametres" class="section">
+                <div class="card">
+                    <div class="card-title">Paramètres du site</div>
+                    <div class="card-subtitle">Configuration du ministère</div>
+                </div>
+                
+                <div class="card">
+                    <div style="font-weight: 800; font-size: 16; margin-bottom: 20px;">Informations du Ministère</div>
+                    <div class="form-grid" id="settings-form">
+                        <!-- Settings will be loaded here -->
+                    </div>
+                    <button class="btn-primary" onclick="saveSettings()" style="margin-top: 20px;">💾 Sauvegarder</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global variables
+        let articles = [];
+        let settings = {};
+        let currentFilter = 'Tous';
+        let editingArticleId = null;
+        let refreshTimer = null;
+        let isLoadingData = false;
+        let lastDataSignature = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-date').textContent = new Date().toLocaleDateString('fr-FR');
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && sessionStorage.getItem('admin-logged-in') === 'true') {
+                    loadData();
+                }
+            });
+            
+            // Créer MTACMNDatabase de secours si nécessaire
+            if (!window.MTACMNDatabase) {
+                console.log('Création de MTACMNDatabase de secours...');
+                window.MTACMNDatabase = {
+                    initialized: false,
+                    init: async function() {
+                        try {
+                            const response = await fetch('./api.php/articles');
+                            if (response.ok) {
+                                this.initialized = true;
+                                console.log('Base de données initialisée (secours)');
+                                return true;
+                            }
+                        } catch (error) {
+                            console.error('Erreur initialisation secours:', error);
+                        }
+                        return false;
+                    },
+                    getArticles: async function() {
+                        try {
+                            const response = await fetch('./api.php/articles');
+                            return await response.json();
+                        } catch (error) {
+                            console.error('Erreur getArticles:', error);
+                            return [];
+                        }
+                    },
+                    addArticle: async function(article) {
+                        try {
+                            const response = await fetch('./api.php/articles', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(article)
+                            });
+                            const result = await response.json();
+                            if (!result.success) throw new Error(result.message || 'Erreur API');
+                            return result;
+                        } catch (error) {
+                            console.error('Erreur addArticle:', error);
+                            throw error;
+                        }
+                    },
+                    updateArticle: async function(id, article) {
+                        try {
+                            const response = await fetch(`./api.php/articles/${id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(article)
+                            });
+                            const result = await response.json();
+                            if (!result.success) throw new Error(result.message || 'Erreur API');
+                            return result;
+                        } catch (error) {
+                            console.error('Erreur updateArticle:', error);
+                            throw error;
+                        }
+                    },
+                    deleteArticle: async function(id) {
+                        try {
+                            const response = await fetch(`./api.php/articles/${id}`, {
+                                method: 'DELETE'
+                            });
+                            const result = await response.json();
+                            if (!result.success) throw new Error(result.message || 'Erreur API');
+                            return result;
+                        } catch (error) {
+                            console.error('Erreur deleteArticle:', error);
+                            throw error;
+                        }
+                    },
+                    getSettings: async function() {
+                        try {
+                            const response = await fetch('./api.php/settings');
+                            return await response.json();
+                        } catch (error) {
+                            console.error('Erreur getSettings:', error);
+                            return {};
+                        }
+                    },
+                    saveSettings: async function(settings) {
+                        try {
+                            for (const [key, value] of Object.entries(settings)) {
+                                const response = await fetch('./api.php/settings', {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ key, value })
+                                });
+                                const result = await response.json();
+                                if (!result.success) throw new Error(result.message || 'Erreur API');
+                            }
+                            return { success: true };
+                        } catch (error) {
+                            console.error('Erreur saveSettings:', error);
+                            throw error;
+                        }
+                    }
+                };
+            }
+            
+            checkAuth();
+        });
+
+        // Auth functions
+        function checkAuth() {
+            const loggedIn = sessionStorage.getItem('admin-logged-in');
+            if (loggedIn === 'true') {
+                showDashboard();
+                loadData();
+            }
+        }
+
+        function doLogin() {
+            const password = document.getElementById('login-password').value;
+            if (password === 'admin2026') {
+                sessionStorage.setItem('admin-logged-in', 'true');
+                showDashboard();
+                loadData();
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        function doLogout() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+            sessionStorage.removeItem('admin-logged-in');
+            location.reload();
+        }
+
+        function showDashboard() {
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            startRealtimeSync();
+        }
+
+        // Navigation
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById('section-' + sectionName).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.querySelector('[data-section="' + sectionName + '"]').classList.add('active');
+            
+            if (sectionName === 'editeur') {
+                resetEditor();
+            }
+        }
+
+        // Data loading
+        async function loadData() {
+            if (isLoadingData) return;
+            isLoadingData = true;
+            try {
+                // Attendre que MTACMNDatabase soit disponible
+                let attempts = 0;
+                while (!window.MTACMNDatabase && attempts < 10) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    attempts++;
+                }
+                
+                if (!window.MTACMNDatabase) {
+                    showToast('Erreur: Base de données non disponible après 5 secondes', 'error');
+                    console.error('MTACMNDatabase non trouvé après 5 secondes');
+                    return;
+                }
+
+                console.log('MTACMNDatabase trouvé:', window.MTACMNDatabase);
+
+                if (!window.MTACMNDatabase.initialized) {
+                    console.log('Initialisation de la base de données...');
+                    await window.MTACMNDatabase.init();
+                }
+
+                console.log('Chargement des articles...');
+                articles = await window.MTACMNDatabase.getArticles();
+                console.log('Articles chargés:', articles.length);
+                
+                console.log('Chargement des paramètres...');
+                settings = await window.MTACMNDatabase.getSettings();
+                console.log('Paramètres chargés:', settings);
+
+                updateStats();
+                updateArticlesTable();
+                updateRecentArticles();
+                updateSettingsForm();
+                updateSyncStatus();
+            } catch (error) {
+                console.error('Erreur chargement:', error);
+                showToast('Erreur lors du chargement des données: ' + error.message, 'error');
+            } finally {
+                isLoadingData = false;
+            }
+        }
+
+        function updateSyncStatus() {
+            const host = document.querySelector('.header-info');
+            if (!host) return;
+
+            const modeDb = window.MTACMNDatabase && !window.MTACMNDatabase.fallbackMode;
+            const chipClass = modeDb ? 'sync-db' : 'sync-local';
+            const chipLabel = modeDb ? 'MySQL connecté' : 'Mode local';
+            const now = new Date().toLocaleTimeString('fr-FR');
+            const signature = JSON.stringify({
+                count: articles.length,
+                latest: articles[0]?.updatedAt || articles[0]?.date || '',
+                mode: chipLabel
+            });
+            const changed = signature !== lastDataSignature;
+            lastDataSignature = signature;
+
+            host.innerHTML = `
+                Ministère des Transports · N'Djaména, Tchad · <span id="current-date">${new Date().toLocaleDateString('fr-FR')}</span>
+                <span class="sync-chip ${chipClass}">${changed ? '●' : '○'} ${chipLabel}</span>
+                <span class="sync-time">Synchro: ${now}</span>
+            `;
+        }
+
+        function startRealtimeSync() {
+            if (refreshTimer) return;
+            refreshTimer = setInterval(() => {
+                if (!document.hidden) {
+                    loadData();
+                }
+            }, 8000);
+        }
+
+        // Stats
+        function updateStats() {
+            const published = articles.filter(a => a.statut === 'Publié');
+            const drafts = articles.filter(a => a.statut === 'Brouillon');
+            const totalViews = articles.reduce((sum, a) => sum + (a.vues || 0), 0);
+
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon">📰</div>
+                    <div class="stat-value">${published.length}</div>
+                    <div class="stat-label">Articles publiés</div>
+                    <div class="stat-sub">${drafts.length} brouillon(s)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👁️</div>
+                    <div class="stat-value">${totalViews.toLocaleString()}</div>
+                    <div class="stat-label">Vues totales</div>
+                    <div class="stat-sub">Toutes publications</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✈️</div>
+                    <div class="stat-value">${articles.filter(a => a.categorie === 'Aviation Civile').length}</div>
+                    <div class="stat-label">Aviation Civile</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🌦️</div>
+                    <div class="stat-value">${articles.filter(a => a.categorie === 'Météorologie').length}</div>
+                    <div class="stat-label">Météorologie</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🛣️</div>
+                    <div class="stat-value">${articles.filter(a => a.categorie === 'Transports').length}</div>
+                    <div class="stat-label">Transports</div>
+                </div>
+            `;
+        }
+
+        // Recent articles
+        function updateRecentArticles() {
+            const container = document.getElementById('recent-articles');
+            const recent = articles.slice(0, 5);
+            
+            container.innerHTML = recent.map(article => `
+                <div style="display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6;">
+                    <div style="width: 52px; height: 42px; border-radius: 8px; background: #e5e7eb; overflow: hidden;">
+                        ${article.image ? `<img src="${article.image}" style="width: 100%; height: 100%; object-fit: cover;">` : '🖼️'}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; font-size: 13px; color: #1a1a2e;">${article.titre}</div>
+                        <div style="font-size: 12px; color: #9ca3af;">📅 ${article.date} · ${article.categorie}</div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn-small btn-edit" onclick="editArticle(${article.id})">✏️</button>
+                        <button class="btn-small btn-delete" onclick="deleteArticle(${article.id})">🗑️</button>
+                    </div>
+                    <span class="tag ${article.statut === 'Publié' ? 'tag-published' : 'tag-draft'}">${article.statut}</span>
+                </div>
+            `).join('');
+        }
+
+        // Articles table
+        function updateArticlesTable() {
+            document.getElementById('total-articles').textContent = articles.length;
+            
+            let filtered = articles;
+            const search = document.getElementById('search-articles').value.toLowerCase();
+            
+            if (search) {
+                filtered = filtered.filter(a => a.titre.toLowerCase().includes(search));
+            }
+            
+            if (currentFilter === 'Publiés') filtered = filtered.filter(a => a.statut === 'Publié');
+            if (currentFilter === 'Brouillons') filtered = filtered.filter(a => a.statut === 'Brouillon');
+            
+            const colors = {
+                'Aviation Civile': '#1a3a6e',
+                'Météorologie': '#0a5c46',
+                'Transports': '#7c2d12'
+            };
+
+            const container = document.getElementById('articles-table');
+            container.innerHTML = filtered.map(article => `
+                <div class="table-row">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <div style="width: 56px; height: 42px; border-radius: 8px; background: #e5e7eb; overflow: hidden;">
+                            ${article.image ? `<img src="${article.image}" style="width: 100%; height: 100%; object-fit: cover;">` : '<div style="display: flex; align-items: center; justify-content: center; height: 100%;">🖼️</div>'}
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 13px; color: #1a1a2e;">${article.titre}</div>
+                            <div style="font-size: 11px; color: #9ca3af;">${article.date}</div>
+                        </div>
+                    </div>
+                    <div><span style="color: ${colors[article.categorie] || '#374151'}; font-weight: 700; font-size: 12px;">${article.categorie}</span></div>
+                    <div><span class="tag ${article.statut === 'Publié' ? 'tag-published' : 'tag-draft'}">${article.statut}</span></div>
+                    <div style="font-size: 13px; color: #6b7280;">👁️ ${article.vues || 0}</div>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-small btn-star" onclick="toggleUne(${article.id})" title="À la une">⭐</button>
+                        <button class="btn-small" style="background:#ede9fe;color:#5b21b6;" onclick="togglePublish(${article.id})" title="Publier / Dépublier">🔁</button>
+                        <button class="btn-small" style="background:#e0f2fe;color:#075985;" onclick="duplicateArticle(${article.id})" title="Dupliquer">📄</button>
+                        <button class="btn-small btn-edit" onclick="editArticle(${article.id})">✏️</button>
+                        <button class="btn-small btn-delete" onclick="deleteArticle(${article.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter functions
+        function filterArticles() {
+            updateArticlesTable();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updateArticlesTable();
+        }
+
+        // Image functions
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('preview-img').src = e.target.result;
+                    document.getElementById('image-preview').style.display = 'block';
+                    // Store base64 for now (in production, upload to server)
+                    document.getElementById('article-image').value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeImage() {
+            document.getElementById('article-image-file').value = '';
+            document.getElementById('article-image').value = '';
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('preview-img').src = '';
+        }
+
+        // Article CRUD
+        function resetEditor() {
+            editingArticleId = null;
+            document.getElementById('editor-title').textContent = 'Nouvel article';
+            document.getElementById('article-titre').value = '';
+            document.getElementById('article-categorie').value = 'Transports';
+            document.getElementById('article-resume').value = '';
+            document.getElementById('article-contenu').value = '';
+            document.getElementById('article-date').value = new Date().toLocaleDateString('fr-FR');
+            document.getElementById('article-image').value = '';
+            document.getElementById('article-image-file').value = '';
+            document.getElementById('image-preview').style.display = 'none';
+            document.getElementById('article-une').checked = false;
+        }
+
+        function editArticle(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+            
+            editingArticleId = id;
+            document.getElementById('editor-title').textContent = 'Modifier l\'article';
+            document.getElementById('article-titre').value = article.titre;
+            document.getElementById('article-categorie').value = article.categorie;
+            document.getElementById('article-resume').value = article.resume;
+            document.getElementById('article-contenu').value = article.contenu || '';
+            document.getElementById('article-date').value = article.date;
+            document.getElementById('article-image').value = article.image || '';
+            document.getElementById('article-une').checked = article.une || false;
+            
+            // Show image preview if exists
+            if (article.image) {
+                document.getElementById('preview-img').src = article.image;
+                document.getElementById('image-preview').style.display = 'block';
+            } else {
+                document.getElementById('image-preview').style.display = 'none';
+            }
+            
+            showSection('editeur');
+        }
+
+        async function saveArticle(publish) {
+            // Vérifier que MTACMNDatabase est disponible
+            if (!window.MTACMNDatabase) {
+                showToast('Erreur: Base de données non disponible', 'error');
+                console.error('MTACMNDatabase non disponible');
+                return;
+            }
+
+            const titre = document.getElementById('article-titre').value.trim();
+            const resume = document.getElementById('article-resume').value.trim();
+            const categorie = document.getElementById('article-categorie').value.trim();
+            
+            // Validation stricte de la catégorie
+            const categoriesValides = ['Transports', 'Aviation Civile', 'Météorologie'];
+            if (!categoriesValides.includes(categorie)) {
+                showToast('Catégorie invalide. Valeurs autorisées: Transports, Aviation Civile, Météorologie', 'error');
+                console.error('Catégorie invalide:', categorie);
+                return;
+            }
+            
+            if (!titre || !resume) {
+                showToast('Titre et résumé obligatoires', 'error');
+                return;
+            }
+
+            const article = {
+                titre,
+                categorie: categorie, // Utiliser la valeur validée
+                resume,
+                contenu: document.getElementById('article-contenu').value,
+                date: document.getElementById('article-date').value || new Date().toLocaleDateString('fr-FR'),
+                image: document.getElementById('article-image').value || '',
+                imageKey: '', // Champ requis par l'API
+                statut: publish ? 'Publié' : 'Brouillon',
+                une: document.getElementById('article-une').checked,
+                vues: editingArticleId ? (articles.find(a => a.id === editingArticleId)?.vues || 0) : 0
+            };
+
+            console.log('Article data:', article); // Debug
+            console.log('MTACMNDatabase methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.MTACMNDatabase))); // Debug
+
+            try {
+                let result;
+                if (editingArticleId) {
+                    result = await window.MTACMNDatabase.updateArticle(editingArticleId, article);
+                    if (!result || result.success === false) {
+                        throw new Error(result?.message || 'Échec de modification de l\'article');
+                    }
+                    showToast('Article modifié avec succès!', 'success');
+                } else {
+                    result = await window.MTACMNDatabase.addArticle(article);
+                    if (!result || result.success === false) {
+                        throw new Error(result?.message || 'Échec de création de l\'article');
+                    }
+                    showToast(publish ? 'Article publié!' : 'Brouillon sauvegardé', 'success');
+                }
+                
+                await loadData();
+                showSection('articles');
+            } catch (error) {
+                console.error('Erreur sauvegarde:', error);
+                showToast('Erreur lors de la sauvegarde: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteArticle(id) {
+            if (!confirm('Supprimer cet article définitivement ?')) return;
+            
+            try {
+                const result = await window.MTACMNDatabase.deleteArticle(id);
+                if (!result || result.success === false) {
+                    throw new Error(result?.message || 'Suppression échouée');
+                }
+                showToast('Article supprimé', 'success');
+                await loadData();
+            } catch (error) {
+                showToast('Erreur lors de la suppression: ' + (error.message || 'inconnue'), 'error');
+            }
+        }
+
+        async function toggleUne(id) {
+            try {
+                const article = articles.find(a => a.id === id);
+                if (article) {
+                    // Désactiver pour tous les autres
+                    for (const a of articles) {
+                        if (a.une && a.id !== id) {
+                            await window.MTACMNDatabase.updateArticle(a.id, { une: false });
+                        }
+                    }
+                    await window.MTACMNDatabase.updateArticle(id, { une: !article.une });
+                    showToast('Article à la une mis à jour', 'success');
+                    await loadData();
+                }
+            } catch (error) {
+                showToast('Erreur lors de la mise à jour', 'error');
+            }
+        }
+
+        async function togglePublish(id) {
+            try {
+                const article = articles.find(a => a.id === id);
+                if (!article) return;
+                const next = article.statut === 'Publié' ? 'Brouillon' : 'Publié';
+                const result = await window.MTACMNDatabase.updateArticle(id, { statut: next });
+                if (!result || result.success === false) {
+                    throw new Error(result?.message || 'Changement statut échoué');
+                }
+                showToast(`Article ${next === 'Publié' ? 'publié' : 'mis en brouillon'}`, 'success');
+                await loadData();
+            } catch (error) {
+                showToast('Erreur statut: ' + (error.message || 'inconnue'), 'error');
+            }
+        }
+
+        async function duplicateArticle(id) {
+            try {
+                const article = articles.find(a => a.id === id);
+                if (!article) return;
+                const clone = {
+                    ...article,
+                    titre: `${article.titre} (copie)`,
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    statut: 'Brouillon',
+                    une: false,
+                    vues: 0
+                };
+                delete clone.id;
+                const result = await window.MTACMNDatabase.addArticle(clone);
+                if (!result || result.success === false) {
+                    throw new Error(result?.message || 'Duplication échouée');
+                }
+                showToast('Article dupliqué en brouillon', 'success');
+                await loadData();
+            } catch (error) {
+                showToast('Erreur duplication: ' + (error.message || 'inconnue'), 'error');
+            }
+        }
+
+        // Settings
+        function updateSettingsForm() {
+            const fields = {
+                'siteName': settings.siteName || '',
+                'sigle': settings.sigle || '',
+                'ministre': settings.ministre || '',
+                'secretaireGeneral': settings.secretaireGeneral || '',
+                'telephone': settings.telephone || '',
+                'email': settings.email || '',
+                'adresse': settings.adresse || '',
+                'siteOfficiel': settings.siteOfficiel || ''
+            };
+
+            const container = document.getElementById('settings-form');
+            container.innerHTML = Object.entries(fields).map(([key, value]) => `
+                <div class="form-group">
+                    <label>${key}</label>
+                    <input type="text" id="setting-${key}" class="form-input-text" value="${value}">
+                </div>
+            `).join('');
+        }
+
+        async function saveSettings() {
+            const newSettings = {
+                siteName: document.getElementById('setting-siteName').value,
+                sigle: document.getElementById('setting-sigle').value,
+                ministre: document.getElementById('setting-ministre').value,
+                secretaireGeneral: document.getElementById('setting-secretaireGeneral').value,
+                telephone: document.getElementById('setting-telephone').value,
+                email: document.getElementById('setting-email').value,
+                adresse: document.getElementById('setting-adresse').value,
+                siteOfficiel: document.getElementById('setting-siteOfficiel').value
+            };
+
+            try {
+                await window.MTACMNDatabase.saveSettings(newSettings);
+                showToast('Paramètres sauvegardés!', 'success');
+            } catch (error) {
+                showToast('Erreur lors de la sauvegarde', 'error');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test MySQL Uniquement - MTACMN</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; margin: 20px 0; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .status { padding: 10px 15px; border-radius: 6px; margin: 10px 0; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 6px; text-decoration: none; display: inline-block; margin: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .btn.success { background: #28a745; }
+        .btn.success:hover { background: #218838; }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        h2 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ Test MySQL Uniquement - MTACMN</h1>
+        
+        <div class="card">
+            <h2>🔧 Vérification du système</h2>
+            <div id="system-check" class="status info">Vérification en cours...</div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Test de connexion MySQL</h2>
+            <button onclick="testMySQLConnection()" class="btn">Tester la connexion MySQL</button>
+            <div id="mysql-result"></div>
+        </div>
+
+        <div class="card">
+            <h2>📰 Test des articles</h2>
+            <button onclick="testArticles()" class="btn">Tester les articles</button>
+            <div id="articles-result"></div>
+        </div>
+
+        <div class="card">
+            <h2>✍️ Test de création d'article</h2>
+            <button onclick="testCreateArticle()" class="btn">Créer un article test</button>
+            <div id="create-result"></div>
+        </div>
+
+        <div class="card">
+            <h2>🌐 Test de l'API directe</h2>
+            <button onclick="testAPIDirect()" class="btn">Tester l'API</button>
+            <div id="api-result"></div>
+        </div>
+
+        <div class="card">
+            <h2>🎯 Actions</h2>
+            <button onclick="clearAll()" class="btn">Vider tout le cache</button>
+            <button onclick="goToAdmin()" class="btn success">Aller à l'administration</button>
+            <button onclick="goToSite()" class="btn success">Aller au site</button>
+        </div>
+    </div>
+
+    <script src="database.js"></script>
+    <script>
+        // Vérification du système
+        function checkSystem() {
+            const checkDiv = document.getElementById('system-check');
+            
+            if (typeof window.MTACMNDatabase !== 'undefined') {
+                checkDiv.innerHTML = '<div class="status success">✅ MTACMNDatabase chargé</div>';
+                
+                // Vérifier le mode
+                setTimeout(() => {
+                    if (window.MTACMNDatabase.fallbackMode) {
+                        checkDiv.innerHTML += '<div class="status warning">⚠️ Mode fallback activé</div>';
+                    } else {
+                        checkDiv.innerHTML += '<div class="status success">✅ Mode MySQL actif</div>';
+                    }
+                    
+                    if (window.MTACMNDatabase.initialized) {
+                        checkDiv.innerHTML += '<div class="status success">✅ Base de données initialisée</div>';
+                    } else {
+                        checkDiv.innerHTML += '<div class="status error">❌ Base de données non initialisée</div>';
+                    }
+                }, 1000);
+            } else {
+                checkDiv.innerHTML = '<div class="status error">❌ MTACMNDatabase non trouvé</div>';
+            }
+        }
+
+        // Test de connexion MySQL
+        async function testMySQLConnection() {
+            const resultDiv = document.getElementById('mysql-result');
+            resultDiv.innerHTML = '<div class="status info">🔄 Test de connexion MySQL...</div>';
+            
+            try {
+                const result = await window.MTACMNDatabase.init();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ Connexion MySQL réussie</div>
+                        <div class="status info">📊 ${result.articles ? result.articles.length : 0} articles trouvés</div>
+                        <div class="status info">🔧 Mode: ${window.MTACMNDatabase.fallbackMode ? 'Fallback' : 'MySQL'}</div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">❌ Erreur connexion: ${result.message || 'Erreur inconnue'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test des articles
+        async function testArticles() {
+            const resultDiv = document.getElementById('articles-result');
+            resultDiv.innerHTML = '<div class="status info">🔄 Chargement des articles...</div>';
+            
+            try {
+                const result = await window.MTACMNDatabase.getArticles({ statut: 'Publié' });
+                
+                if (result.success) {
+                    const articles = result.articles || [];
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ Articles chargés: ${articles.length}</div>
+                        <div style="margin-top: 15px;">
+                            ${articles.slice(0, 3).map(article => `
+                                <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin: 5px 0;">
+                                    <strong>${article.titre}</strong><br>
+                                    <small>Catégorie: ${article.categorie} | Statut: ${article.statut}</small>
+                                </div>
+                            `).join('')}
+                            ${articles.length > 3 ? `<div style="text-align: center; color: #666;">... et ${articles.length - 3} autres</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">❌ Erreur articles: ${result.message || 'Erreur inconnue'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test de création d'article
+        async function testCreateArticle() {
+            const resultDiv = document.getElementById('create-result');
+            resultDiv.innerHTML = '<div class="status info">🔄 Création d\'article test...</div>';
+            
+            const testArticle = {
+                titre: 'ARTICLE TEST MySQL - ' + new Date().toLocaleTimeString(),
+                date: new Date().toLocaleDateString('fr-FR'),
+                categorie: 'Transports',
+                resume: 'Test de résumé pour vérifier la création MySQL',
+                contenu: 'Test de contenu pour vérifier que la création d\'article fonctionne bien avec MySQL.',
+                statut: 'Brouillon',
+                image: 'https://example.com/test.jpg'
+            };
+            
+            try {
+                const result = await window.MTACMNDatabase.addArticle(testArticle);
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ Article créé avec succès!</div>
+                        <div class="status info">🆔 ID: ${result.id || 'N/A'}</div>
+                        <div class="status info">📝 Titre: ${testArticle.titre}</div>
+                    `;
+                    
+                    // Supprimer l'article de test
+                    if (result.id) {
+                        setTimeout(() => {
+                            window.MTACMNDatabase.deleteArticle(result.id);
+                        }, 2000);
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">❌ Erreur création: ${result.message || 'Erreur inconnue'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test API directe
+        async function testAPIDirect() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="status info">🔄 Test API direct...</div>';
+            
+            try {
+                const response = await fetch('./api.php/articles');
+                const data = await response.json();
+                
+                if (response.ok && data.articles) {
+                    resultDiv.innerHTML = `
+                        <div class="status success">✅ API fonctionne</div>
+                        <div class="status info">📊 ${data.articles.length} articles via API</div>
+                        <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="status error">❌ API erreur: ${JSON.stringify(data)}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status error">❌ Erreur API: ${error.message}</div>`;
+            }
+        }
+
+        // Actions
+        function clearAll() {
+            localStorage.clear();
+            sessionStorage.clear();
+            location.reload();
+        }
+
+        function goToAdmin() {
+            window.open('admin.html', '_blank');
+        }
+
+        function goToSite() {
+            window.open('start.html', '_blank');
+        }
+
+        // Initialisation
+        window.onload = () => {
+            checkSystem();
+        };
+    </script>
+</body>
+</html>

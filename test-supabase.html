@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase - MTACMN</title>
+    
+    <!-- SDK Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Configuration intégrée directement -->
+    <script>
+        // Configuration directe pour éviter les problèmes de chargement
+        const SUPABASE_CONFIG = {
+            url: 'https://modpcwtnnnnxjhfhqfzw.supabase.co',
+            anonKey: 'sb_publishable_XInFbMcsLX7Iac8qNsofCA_6gETzyTB',
+            serviceRoleKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+            options: {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true
+                },
+                db: {
+                    schema: 'public'
+                }
+            },
+            site: {
+                name: 'Ministère des Transports, de l\'Aviation Civile et de la Météorologie Nationale',
+                sigle: 'MTACMN',
+                url: window.location.origin,
+                adminUrl: `${window.location.origin}/admin.html`
+            },
+            upload: {
+                maxSize: 5242880,
+                path: 'uploads/',
+                bucket: 'images',
+                allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf']
+            },
+            cache: {
+                enabled: true,
+                duration: 3600000
+            }
+        };
+        
+        // Configuration globale
+        window.SUPABASE_CONFIG = SUPABASE_CONFIG;
+    </script>
+    
+    <!-- Base de données Supabase -->
+    <script src="database-supabase.js"></script>
+    
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .success { color: #059669; }
+        .error { color: #dc2626; }
+        .warning { color: #d97706; }
+        .info { color: #1e40af; }
+        .log { background: #f3f4f6; padding: 10px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+        button { background: #1e40af; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e3a8a; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #e5e7eb; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test de Connexion Supabase - MTACMN</h1>
+        <p>Cette page permet de tester la connexion à votre base de données Supabase.</p>
+
+        <div class="test-section">
+            <h2>📊 État de la connexion</h2>
+            <div id="connection-status">En cours de test...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Tests de fonctionnalités</h2>
+            
+            <button onclick="testConnection()">Tester la connexion</button>
+            <button onclick="testGetArticles()">Tester les articles</button>
+            <button onclick="testGetSettings()">Tester les paramètres</button>
+            <button onclick="testCreateArticle()">Tester création article</button>
+            <button onclick="testUpload()">Test upload (simulé)</button>
+            
+            <div id="test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Logs</h2>
+            <div id="logs" class="log">Les logs apparaîtront ici...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>⚙️ Configuration actuelle</h2>
+            <div id="config-display"></div>
+        </div>
+    </div>
+
+    <script>
+        // Logger custom
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            logs.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Afficher la configuration
+        function displayConfig() {
+            const config = window.SUPABASE_CONFIG;
+            const configDiv = document.getElementById('config-display');
+            
+            configDiv.innerHTML = `
+                <p><strong>URL Supabase:</strong> ${config.url}</p>
+                <p><strong>Clé Anon:</strong> ${config.anonKey ? '✅ Configurée' : '❌ Non configurée'}</p>
+                <p><strong>Mode Debug:</strong> ${config.debug ? 'Activé' : 'Désactivé'}</p>
+                <p><strong>Nom du site:</strong> ${config.site.name}</p>
+            `;
+        }
+
+        // Tester la connexion
+        async function testConnection() {
+            log('🔄 Test de connexion à Supabase...', 'info');
+            
+            try {
+                if (!window.SUPABASE_CONFIG.anonKey || window.SUPABASE_CONFIG.anonKey.includes('XXXXXXX')) {
+                    throw new Error('Veuillez configurer vos clés Supabase dans config-supabase.js');
+                }
+
+                await window.MTACMNDatabase.init();
+                
+                const status = document.getElementById('connection-status');
+                if (window.MTACMNDatabase.fallbackMode) {
+                    status.innerHTML = '<span class="warning">⚠️ Mode fallback activé - Supabase non disponible</span>';
+                    log('Mode fallback activé - Utilisation des données initiales', 'warning');
+                } else {
+                    status.innerHTML = '<span class="success">✅ Connexion Supabase établie</span>';
+                    log('✅ Connexion Supabase réussie', 'success');
+                }
+                
+            } catch (error) {
+                const status = document.getElementById('connection-status');
+                status.innerHTML = '<span class="error">❌ Erreur de connexion</span>';
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        // Tester la récupération des articles
+        async function testGetArticles() {
+            log('🔄 Test de récupération des articles...', 'info');
+            
+            try {
+                const result = await window.MTACMNDatabase.getArticles({ statut: 'Publié' });
+                
+                if (result.success) {
+                    log(`✅ ${result.articles.length} articles récupérés`, 'success');
+                    result.articles.forEach((article, index) => {
+                        log(`   ${index + 1}. ${article.titre} (${article.categorie})`, 'info');
+                    });
+                } else {
+                    log('❌ Échec de la récupération des articles', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erreur lors du test des articles: ${error.message}`, 'error');
+            }
+        }
+
+        // Tester les paramètres
+        async function testGetSettings() {
+            log('🔄 Test de récupération des paramètres...', 'info');
+            
+            try {
+                const result = await window.MTACMNDatabase.getSettings();
+                
+                if (result.success) {
+                    log(`✅ ${Object.keys(result.settings).length} paramètres récupérés`, 'success');
+                    Object.entries(result.settings).forEach(([key, value]) => {
+                        log(`   ${key}: ${value}`, 'info');
+                    });
+                } else {
+                    log('❌ Échec de la récupération des paramètres', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erreur lors du test des paramètres: ${error.message}`, 'error');
+            }
+        }
+
+        // Tester la création d'un article
+        async function testCreateArticle() {
+            log('🔄 Test de création d\'article...', 'info');
+            
+            try {
+                const testArticle = {
+                    titre: `Article de test - ${new Date().toLocaleString()}`,
+                    date: new Date().toLocaleDateString('fr-FR'),
+                    categorie: 'Transports',
+                    resume: 'Ceci est un article de test pour vérifier la création.',
+                    contenu: 'Contenu complet de l\'article de test...',
+                    une: false,
+                    statut: 'Brouillon'
+                };
+                
+                const result = await window.MTACMNDatabase.addArticle(testArticle);
+                
+                if (result.success) {
+                    log(`✅ Article créé avec ID: ${result.article.id}`, 'success');
+                    log(`   Titre: ${result.article.titre}`, 'info');
+                } else {
+                    log(`❌ Échec de la création: ${result.message}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erreur lors du test de création: ${error.message}`, 'error');
+            }
+        }
+
+        // Tester l'upload (simulé)
+        function testUpload() {
+            log('🔄 Test d\'upload (simulé)...', 'info');
+            
+            // Simuler un fichier
+            const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+            
+            window.MTACMNDatabase.uploadFile(mockFile, 'test')
+                .then(result => {
+                    if (result.success) {
+                        log(`✅ Upload simulé réussie`, 'success');
+                        log(`   URL: ${result.url}`, 'info');
+                    } else {
+                        log(`❌ Échec de l'upload: ${result.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    log(`❌ Erreur lors du test d'upload: ${error.message}`, 'error');
+                });
+        }
+
+        // Tests automatiques au chargement
+        async function runAllTests() {
+            log('🚀 Démarrage des tests automatiques...', 'info');
+            
+            displayConfig();
+            await testConnection();
+            
+            // Attendre un peu entre les tests
+            setTimeout(async () => {
+                await testGetArticles();
+                setTimeout(async () => {
+                    await testGetSettings();
+                    log('🎉 Tests automatiques terminés', 'success');
+                }, 1000);
+            }, 1000);
+        }
+
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            log('📄 Page de test chargée', 'info');
+            runAllTests();
+        });
+    </script>
+</body>
+</html>
