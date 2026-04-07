@@ -122,8 +122,10 @@ const INITIAL_DATA = {
 // ─── CLIENT API MYSQL ────────────────────────────────────────────────
 class MTACMNMySQLClient {
     constructor() {
-        // Correction de l'URL de l'API
-        this.baseURL = './api.php'; // URL relative simple
+        // API configurable pour Vercel:
+        // - window.API_BASE_URL peut être défini dans runtime-config.js
+        // - fallback local: ./api.php (hébergement PHP classique)
+        this.baseURL = window.API_BASE_URL || './api.php';
         this.timeout = 10000;
     }
 
