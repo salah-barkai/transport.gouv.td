@@ -1,0 +1,19 @@
+Déploiement n0c (PlanetHoster)
+==============================
+
+1. Dans le gestionnaire de fichiers n0c, ouvrez le dossier public_html du domaine.
+
+2. Uploadez depuis ce dossier deploy-n0c au minimum :
+   - index.html   (page d'accueil — obligatoire)
+   - database.js  (client API MySQL)
+
+3. Les fichiers suivants doivent déjà être sur le serveur (vous les aviez uploadés) :
+   - api.php, config.php, .htaccess, admin.html, etc.
+
+4. Dossier image/ : placez vos fichiers sous public_html/image/
+   (ex. logo.jpg, Ministre de transport.jpg, image pour acceuil.jpg)
+
+5. Variante optimisée (optionnel) : sur votre PC, dans le projet, exécutez
+   npm install && npm run build
+   puis uploadez tout le contenu du dossier dist/ à la place de index.html
+   généré par cette archive (build Vite avec assets hachés).
