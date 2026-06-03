@@ -10,10 +10,11 @@ define('DB_USER', 'transport_gov');
 define('DB_PASSWORD', 'Bouye66382404.'); // Remplacez par le vrai mot de passe
 define('DB_CHARSET', 'utf8mb4');
 
-define('ADMIN_DEFAULT_USERNAME', 'admin');
-define('ADMIN_DEFAULT_PASSWORD', 'admin2026'); // Changer immédiatement en production
+// Admin defaults: prefer environment variables if present
+define('ADMIN_DEFAULT_USERNAME', getenv('ADMIN_DEFAULT_USERNAME') ?: 'admin');
+define('ADMIN_DEFAULT_PASSWORD', getenv('ADMIN_DEFAULT_PASSWORD') ?: 'admin2026'); // Change in production, or set env var
 
-define('ADMIN_SESSION_KEY', 'mtacmn_admin_user');
+define('ADMIN_SESSION_KEY', getenv('ADMIN_SESSION_KEY') ?: 'mtacmn_admin_user');
 
 // Configuration du site
 define('SITE_URL', 'https://transport.gouv.td');

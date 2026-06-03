@@ -177,10 +177,15 @@ function resolveAssetUrl(src) {
   const isViteDev = typeof window !== "undefined" && window.location.port === "5173";
 
   if (looksLikeBackendAsset && isViteDev) {
-    return `http://127.0.0.1:8000/${normalized}`;
+    return encodeURI(`http://127.0.0.1:8000/${normalized}`);
   }
 
-  return src;
+  // Ensure spaces and non-ASCII chars are encoded for browser URLs
+  try {
+    return encodeURI(src);
+  } catch (e) {
+    return src;
+  }
 }
 
 function Badge({ label }) {
@@ -202,7 +207,7 @@ function ImagePlaceholder({ label, height = 220 }) {
 
 function ArticleImg({ src, alt, height = 220, style = {} }) {
   if (!src) return <ImagePlaceholder label={alt} height={height} />;
-  return <img src={resolveAssetUrl(src)} alt={alt} style={{ width: "100%", height, objectFit: "cover", display: "block", ...style }} onError={e => { e.target.style.display = "none"; e.target.nextSibling && (e.target.nextSibling.style.display = "flex"); }} />;
+  return <img src={resolveAssetUrl(src)} alt={alt} loading="lazy" decoding="async" style={{ width: "100%", height, objectFit: "cover", display: "block", ...style }} onError={e => { e.target.style.display = "none"; e.target.nextSibling && (e.target.nextSibling.style.display = "flex"); }} />;
 }
 
 function SectionBanner({ image, title, subtitle, height = 280, overlay = "rgba(0,20,60,0.62)" }) {

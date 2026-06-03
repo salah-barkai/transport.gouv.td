@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "package.json", "use": "@vercel/static-build" },
+    { "src": "api/**/*.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/dist/$1" }
+  ],
+  "cleanUrls": true,
+  "outputDirectory": "dist",
+  "env": {
+    "MYSQL_HOST": "@mysql_host",
+    "MYSQL_USER": "@mysql_user",
+    "MYSQL_PASSWORD": "@mysql_password",
+    "MYSQL_DATABASE": "@mysql_database",
+    "ADMIN_DEFAULT_USERNAME": "@admin_username",
+    "ADMIN_DEFAULT_PASSWORD": "@admin_password"
+  }
+}

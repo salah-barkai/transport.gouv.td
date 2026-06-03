@@ -446,6 +446,28 @@ class MTACMNAPI {
         exit;
     }
 
+    private function requireCsrf() {
+        // Allow bypass in case no session token exists (should not happen when authenticated)
+        $expected = $_SESSION['csrf_token'] ?? null;
+        if (!$expected) {
+            $this->sendResponse(['error' => 'CSRF token manquant'], 403);
+        }
+
+        // Header can be sent as X-CSRF-Token
+        $provided = null;
+        if (!empty($_SERVER['HTTP_X_CSRF_TOKEN'])) {
+            $provided = $_SERVER['HTTP_X_CSRF_TOKEN'];
+        } else {
+            $headers = function_exists('getallheaders') ? getallheaders() : [];
+            if (!empty($headers['X-CSRF-Token'])) $provided = $headers['X-CSRF-Token'];
+            if (!empty($headers['x-csrf-token'])) $provided = $headers['x-csrf-token'];
+        }
+
+        if (!$provided || !hash_equals((string)$expected, (string)$provided)) {
+            $this->sendResponse(['error' => 'CSRF token invalide'], 403);
+        }
+    }
+
     private function isAuthenticated() {
         return isset($_SESSION[ADMIN_SESSION_KEY]) && is_array($_SESSION[ADMIN_SESSION_KEY]);
     }
@@ -571,6 +593,7 @@ class MTACMNAPI {
         switch ($resource) {
             case 'articles':
                 $this->requireAuth();
+                $this->requireCsrf();
                 $data = json_decode(file_get_contents('php://input'), true);
                 if ($data) {
                     $result = $this->articleManager->createArticle($data);
@@ -587,7 +610,10 @@ class MTACMNAPI {
                     if (!empty($result['success']) && $result['success'] === true) {
                         session_regenerate_id(true);
                         $_SESSION[ADMIN_SESSION_KEY] = $result['user'];
-                        $this->sendResponse(['success' => true, 'user' => $result['user']]);
+                        // Generate CSRF token for subsequent requests
+                        $token = bin2hex(random_bytes(32));
+                        $_SESSION['csrf_token'] = $token;
+                        $this->sendResponse(['success' => true, 'user' => $result['user'], 'csrf_token' => $token]);
                     } else {
                         $this->sendResponse($result, 401);
                     }
@@ -604,6 +630,7 @@ class MTACMNAPI {
     // Gérer les requêtes PUT
     private function handlePut($segments) {
         $this->requireAuth();
+        $this->requireCsrf();
         $resource = $segments[0] ?? '';
         $id = $segments[1] ?? null;
 
@@ -645,6 +672,7 @@ class MTACMNAPI {
     // Gérer les requêtes DELETE
     private function handleDelete($segments) {
         $this->requireAuth();
+        $this->requireCsrf();
         $resource = $segments[0] ?? '';
         $id = $segments[1] ?? null;
 
