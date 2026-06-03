@@ -10,6 +10,11 @@ define('DB_USER', 'transport_gov');
 define('DB_PASSWORD', 'Bouye66382404.'); // Remplacez par le vrai mot de passe
 define('DB_CHARSET', 'utf8mb4');
 
+define('ADMIN_DEFAULT_USERNAME', 'admin');
+define('ADMIN_DEFAULT_PASSWORD', 'admin2026'); // Changer immédiatement en production
+
+define('ADMIN_SESSION_KEY', 'mtacmn_admin_user');
+
 // Configuration du site
 define('SITE_URL', 'https://transport.gouv.td');
 define('API_URL', 'https://transport.gouv.td/api.php');

@@ -122,11 +122,13 @@
             <div class="login-subtitle">Ministère des Transports, Aviation Civile & Météorologie</div>
             
             <div class="form-group">
+                <label class="form-label">Nom d'utilisateur</label>
+                <input type="text" id="login-username" class="form-input" placeholder="admin" onkeypress="if(event.key==='Enter')doLogin()">
+            </div>
+            <div class="form-group">
                 <label class="form-label">Mot de passe administrateur</label>
                 <input type="password" id="login-password" class="form-input" placeholder="•••••••" onkeypress="if(event.key==='Enter')doLogin()">
             </div>
-            <div style="color: rgba(255,255,255,0.35); font-size: 11px; margin-bottom: 24px; text-align: right;">Demo: admin2026</div>
-            
             <button class="btn" onclick="doLogin()">Se connecter →</button>
             
             <div id="login-error" style="color: #f87171; font-size: 12px; margin-top: 16px; text-align: center; display: none;">Mot de passe incorrect</div>
@@ -328,7 +330,10 @@
                     initialized: false,
                     init: async function() {
                         try {
-                            const response = await fetch('./api.php/articles');
+                            const response = await fetch('./api.php/articles', {
+                                method: 'GET',
+                                credentials: 'include'
+                            });
                             if (response.ok) {
                                 this.initialized = true;
                                 console.log('Base de données initialisée (secours)');
@@ -341,7 +346,10 @@
                     },
                     getArticles: async function() {
                         try {
-                            const response = await fetch('./api.php/articles');
+                            const response = await fetch('./api.php/articles', {
+                                method: 'GET',
+                                credentials: 'include'
+                            });
                             return await response.json();
                         } catch (error) {
                             console.error('Erreur getArticles:', error);
@@ -352,6 +360,7 @@
                         try {
                             const response = await fetch('./api.php/articles', {
                                 method: 'POST',
+                                credentials: 'include',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify(article)
                             });
@@ -367,6 +376,7 @@
                         try {
                             const response = await fetch(`./api.php/articles/${id}`, {
                                 method: 'PUT',
+                                credentials: 'include',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify(article)
                             });
@@ -381,7 +391,8 @@
                     deleteArticle: async function(id) {
                         try {
                             const response = await fetch(`./api.php/articles/${id}`, {
-                                method: 'DELETE'
+                                method: 'DELETE',
+                                credentials: 'include'
                             });
                             const result = await response.json();
                             if (!result.success) throw new Error(result.message || 'Erreur API');
@@ -393,7 +404,10 @@
                     },
                     getSettings: async function() {
                         try {
-                            const response = await fetch('./api.php/settings');
+                            const response = await fetch('./api.php/settings', {
+                                method: 'GET',
+                                credentials: 'include'
+                            });
                             return await response.json();
                         } catch (error) {
                             console.error('Erreur getSettings:', error);
@@ -405,6 +419,7 @@
                             for (const [key, value] of Object.entries(settings)) {
                                 const response = await fetch('./api.php/settings', {
                                     method: 'PUT',
+                                    credentials: 'include',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ key, value })
                                 });
@@ -424,30 +439,72 @@
         });
 
         // Auth functions
-        function checkAuth() {
-            const loggedIn = sessionStorage.getItem('admin-logged-in');
-            if (loggedIn === 'true') {
-                showDashboard();
-                loadData();
+        async function checkAuth() {
+            try {
+                const response = await fetch('./api.php/auth/status', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                if (result.authenticated) {
+                    showDashboard();
+                    loadData();
+                }
+            } catch (error) {
+                console.error('Erreur vérification auth:', error);
             }
         }
 
-        function doLogin() {
+        async function doLogin() {
+            const username = document.getElementById('login-username').value.trim();
             const password = document.getElementById('login-password').value;
-            if (password === 'admin2026') {
-                sessionStorage.setItem('admin-logged-in', 'true');
-                showDashboard();
-                loadData();
-            } else {
+            document.getElementById('login-error').style.display = 'none';
+
+            if (!username || !password) {
+                document.getElementById('login-error').textContent = 'Nom d’utilisateur et mot de passe requis';
+                document.getElementById('login-error').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('./api.php/auth', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    sessionStorage.setItem('admin-logged-in', 'true');
+                    showDashboard();
+                    loadData();
+                } else {
+                    document.getElementById('login-error').textContent = result.message || 'Identifiants incorrects';
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Erreur de connexion:', error);
+                document.getElementById('login-error').textContent = 'Erreur de connexion au serveur';
                 document.getElementById('login-error').style.display = 'block';
             }
         }
 
-        function doLogout() {
+        async function doLogout() {
             if (refreshTimer) {
                 clearInterval(refreshTimer);
                 refreshTimer = null;
             }
+
+            try {
+                await fetch('./api.php/auth/logout', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.error('Erreur déconnexion:', error);
+            }
+
             sessionStorage.removeItem('admin-logged-in');
             location.reload();
         }

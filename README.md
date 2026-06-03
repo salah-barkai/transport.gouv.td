@@ -18,6 +18,13 @@ npm run dev
 
 # Démarrer l'API PHP (dans un 2e terminal)
 npm run api
+
+## Administration sécurisée
+- Accédez à `admin.html` pour gérer les articles et les paramètres.
+- Le système utilise maintenant une authentification côté serveur via `/api.php/auth`.
+- Un compte administrateur par défaut est créé automatiquement si la table `users` est vide.
+- Identifiants par défaut : `admin` / `admin2026` (changez-les immédiatement en production).
+- Ne laissez pas de mot de passe en clair dans le HTML : la connexion est désormais gérée côté serveur.
 ```
 
 ### Construction pour la production

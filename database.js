@@ -133,7 +133,7 @@ class MTACMNMySQLClient {
     async getArticles(filters = {}) {
         try {
             // Construire l'URL correctement
-            let url = `${this.baseURL}`;
+            let url = `${this.baseURL}/articles`;
             const params = new URLSearchParams();
             
             // Ajouter les paramètres de filtre
@@ -151,6 +151,7 @@ class MTACMNMySQLClient {
             
             const response = await fetch(url, {
                 method: 'GET',
+                credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
@@ -172,8 +173,9 @@ class MTACMNMySQLClient {
 
     async createArticle(articleData) {
         try {
-            const response = await fetch(`${this.baseURL}?action=createArticle`, {
+            const response = await fetch(`${this.baseURL}/articles`, {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(articleData)
             });
@@ -187,8 +189,9 @@ class MTACMNMySQLClient {
 
     async updateArticle(id, updates) {
         try {
-            const response = await fetch(`${this.baseURL}?action=updateArticle&id=${id}`, {
-                method: 'POST',
+            const response = await fetch(`${this.baseURL}/articles/${id}`, {
+                method: 'PUT',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updates)
             });
@@ -202,8 +205,9 @@ class MTACMNMySQLClient {
 
     async deleteArticle(id) {
         try {
-            const response = await fetch(`${this.baseURL}?action=deleteArticle&id=${id}`, {
-                method: 'POST'
+            const response = await fetch(`${this.baseURL}/articles/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
             });
             const data = await response.json();
             return data;
@@ -216,7 +220,9 @@ class MTACMNMySQLClient {
     // Paramètres
     async getSettings() {
         try {
-            const response = await fetch(`${this.baseURL}?action=getSettings`);
+            const response = await fetch(`${this.baseURL}/settings`, {
+                credentials: 'include'
+            });
             const data = await response.json();
             return data;
         } catch (error) {
@@ -227,8 +233,9 @@ class MTACMNMySQLClient {
 
     async updateSetting(key, value) {
         try {
-            const response = await fetch(`${this.baseURL}?action=updateSetting`, {
-                method: 'POST',
+            const response = await fetch(`${this.baseURL}/settings`, {
+                method: 'PUT',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key, value })
             });

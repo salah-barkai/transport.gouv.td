@@ -9,6 +9,7 @@
 
 // Charger la configuration
 require_once 'config.php';
+session_start();
 
 // Configuration de la base de données
 class Database {
@@ -339,9 +340,31 @@ class UserManager {
         
         try {
             $this->db->exec($sql);
+            $this->createDefaultAdmin();
             return ['success' => true, 'message' => 'Table users créée avec succès'];
         } catch (PDOException $e) {
             return ['success' => false, 'message' => 'Erreur: ' . $e->getMessage()];
+        }
+    }
+
+    // Créer un compte administrateur par défaut si nécessaire
+    private function createDefaultAdmin() {
+        try {
+            $stmt = $this->db->prepare('SELECT COUNT(*) as total FROM users');
+            $stmt->execute();
+            $row = $stmt->fetch();
+            if ($row && (int)$row['total'] === 0) {
+                $passwordHash = password_hash(ADMIN_DEFAULT_PASSWORD, PASSWORD_DEFAULT);
+                $stmt = $this->db->prepare('INSERT INTO users (username, email, password, role, actif) VALUES (:username, :email, :password, :role, TRUE)');
+                $stmt->execute([
+                    ':username' => ADMIN_DEFAULT_USERNAME,
+                    ':email' => ADMIN_DEFAULT_USERNAME . '@transports.gouv.td',
+                    ':password' => $passwordHash,
+                    ':role' => 'Admin'
+                ]);
+            }
+        } catch (PDOException $e) {
+            // Ignorer en cas d'erreur secondaire
         }
     }
 
@@ -421,6 +444,16 @@ class MTACMNAPI {
         http_response_code($statusCode);
         echo json_encode($data, JSON_UNESCAPED_UNICODE);
         exit;
+    }
+
+    private function isAuthenticated() {
+        return isset($_SESSION[ADMIN_SESSION_KEY]) && is_array($_SESSION[ADMIN_SESSION_KEY]);
+    }
+
+    private function requireAuth() {
+        if (!$this->isAuthenticated()) {
+            $this->sendResponse(['error' => 'Authentification requise'], 401);
+        }
     }
 
     // Gérer les requêtes CORS
@@ -503,6 +536,18 @@ class MTACMNAPI {
                 $settings = $this->settingsManager->getAllSettings();
                 $this->sendResponse($settings);
                 break;
+            case 'auth':
+                $sub = $segments[1] ?? null;
+                if ($sub === 'status') {
+                    $this->sendResponse(['authenticated' => $this->isAuthenticated(), 'user' => $_SESSION[ADMIN_SESSION_KEY] ?? null]);
+                } elseif ($sub === 'logout') {
+                    session_unset();
+                    session_destroy();
+                    $this->sendResponse(['success' => true, 'message' => 'Déconnexion réussie']);
+                } else {
+                    $this->sendResponse(['error' => 'Endpoint auth non trouvé'], 404);
+                }
+                break;
 
             default:
                 // Compatibilité legacy: /api.php/{id}
@@ -525,6 +570,7 @@ class MTACMNAPI {
 
         switch ($resource) {
             case 'articles':
+                $this->requireAuth();
                 $data = json_decode(file_get_contents('php://input'), true);
                 if ($data) {
                     $result = $this->articleManager->createArticle($data);
@@ -538,7 +584,13 @@ class MTACMNAPI {
                 $data = json_decode(file_get_contents('php://input'), true);
                 if ($data && isset($data['username']) && isset($data['password'])) {
                     $result = $this->userManager->authenticate($data['username'], $data['password']);
-                    $this->sendResponse($result, $result['success'] ? 200 : 401);
+                    if (!empty($result['success']) && $result['success'] === true) {
+                        session_regenerate_id(true);
+                        $_SESSION[ADMIN_SESSION_KEY] = $result['user'];
+                        $this->sendResponse(['success' => true, 'user' => $result['user']]);
+                    } else {
+                        $this->sendResponse($result, 401);
+                    }
                 } else {
                     $this->sendResponse(['error' => 'Identifiants manquants'], 400);
                 }
@@ -551,6 +603,7 @@ class MTACMNAPI {
 
     // Gérer les requêtes PUT
     private function handlePut($segments) {
+        $this->requireAuth();
         $resource = $segments[0] ?? '';
         $id = $segments[1] ?? null;
 
@@ -591,6 +644,7 @@ class MTACMNAPI {
 
     // Gérer les requêtes DELETE
     private function handleDelete($segments) {
+        $this->requireAuth();
         $resource = $segments[0] ?? '';
         $id = $segments[1] ?? null;
 
